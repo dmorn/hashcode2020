@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: hashcode2020
+Upstream-Contact:  <>
+Source: github.com/jecoz/hashcode2020
+
+Files: .gitignore .gitmodules
+Copyright: 2020 84cb48 <info@keepinmind.info>
+License: MIT
