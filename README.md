@@ -11,6 +11,6 @@ Clone repository and generate appropriate makefiles.
 Enter build/, make and test.
 ```
 % cd build
-% cmake build . # or `make`.
+% cmake --build . # or `make`.
 % ctest # or `make test`. `ctest -V` for verbose output.
 ```
