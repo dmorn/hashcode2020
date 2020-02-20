@@ -2,9 +2,15 @@
 Team 84cb48 google hashcode solution code.
 
 ## Build and Test
+Clone repository and generate appropriate makefiles.
 ```
-mkdir build && cd build # build stuff on their own.
-cmake .. # generate makefiles.
-cmake build . # or `make`.
-ctest # or `make test`. `ctest -V` for verbose output.
+% git clone --recurse-submodules https://github.com/jecoz/hashcode2020.git # clone repo with submodules
+% cd hashcode2020
+% cmake -H. -Bbuild # generate makefiles inside build/
+```
+Enter build/, make and test.
+```
+% cd build
+% cmake build . # or `make`.
+% ctest # or `make test`. `ctest -V` for verbose output.
 ```
