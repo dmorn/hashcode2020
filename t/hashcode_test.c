@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <setjmp.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/errno.h>
 
@@ -32,19 +33,20 @@ void test_practice_round(void **state) {
 	// Call hashcode code.
 	if (hc_solve_practice(out, in))
 		fail_msg("unable to solve challenge");
+	rewind(out);
 
 	// Now out contains the solution.
-	const char *output = "3\n0 2 3";
+	const char *expout = "3\n0 2 3\n";
 
 	// Read from one file then the other one.
-	size_t bufs = 7;
-	char buf[bufs];
-	if (fread(buf, sizeof(int), bufs, out) < bufs) {
-		perror("fread()");
-		fail_msg("failed reading output");
+	size_t n = strlen(expout);
+	char *buf = malloc(n);
+	if (fread(buf, sizeof(char), n, out) != n) {
+		fail_msg("failed reading expout");
 	}
-	if(!strcmp(buf, output))
+	if(strcmp(buf, expout) != 0)
 		fail_msg("outputs are not the same!");
+	free(buf);
 }
 
 int main(void) {
