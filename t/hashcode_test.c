@@ -23,6 +23,7 @@ void test_practice_round(void **state) {
 		fail_msg("unable to open tmp file");
 	if (fputs(input, in) == EOF)
 		fail_msg("unable to write to tmp file");
+	rewind(in);
 
 	// Input is ready. Now create another tmp file
 	// that will store the expected output.
@@ -38,11 +39,10 @@ void test_practice_round(void **state) {
 	// Now out contains the solution.
 	const char *expout = "3\n0 2 3\n";
 
-	// Read from one file then the other one.
-	size_t n = strlen(expout);
+	size_t n = strlen(expout)+1;
 	char *buf = malloc(n);
-	if (fread(buf, sizeof(char), n, out) != n) {
-		fail_msg("failed reading expout");
+	if (fread(buf, sizeof(char), n, out) < n-1) {
+		fail_msg("failed reading output file");
 	}
 	if(strcmp(buf, expout) != 0)
 		fail_msg("outputs are not the same!");
