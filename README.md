@@ -4,7 +4,7 @@ Team 84cb48 google hashcode solution code.
 ## Build and Test
 Clone repository and generate appropriate makefiles.
 ```
-% git clone --recurse-submodules https://github.com/jecoz/hashcode2020.git # clone repo with submodules
+% git clone --recurse-submodules https://github.com/jecoz/hashcode2020.git
 % cd hashcode2020
 % cmake -H. -Bbuild # generate makefiles inside build/
 ```
