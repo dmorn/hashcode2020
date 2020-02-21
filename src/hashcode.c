@@ -18,7 +18,6 @@ int hc_solve_practice(FILE *out, FILE *in) {
 		fprintf(out, "%d ", types[i]);
 	}
 	fprintf(out, "%d\n", types[n-1]);
-	fflush(out);
 	return 0;
 }
 
@@ -75,7 +74,7 @@ int hc_solve(FILE *out, FILE *in) {
 	int rv;
 	library_t **libs = malloc(sizeof(library_t)*libs_c);
 	if ((rv = parse_libs(libs, &libs_c, in)))
-			return rv;
+		return rv;
 
 	free(scores);
 	free_libs(libs, libs_c);
