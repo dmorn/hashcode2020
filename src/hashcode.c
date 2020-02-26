@@ -111,23 +111,25 @@ static int books_cmp_score(void *thunk, const void *l, const void *r) {
 	return scores[br] - scores[bl];
 }
 
-static void libs_schedule_books(library_t *libs, int libs_c, int *scores) {
+static void lib_sched_books(library_t *l, int *scores) {
+	// Sort books putting the most valuable ones first.
+	// This also helps removing duplicates: when a book
+	// is taken, its score is grounded.
+	qsort_r(l->books, l->books_c, sizeof(int), scores, books_cmp_score);
+
+	l->scan_c = lib_max_scan_c(*l, scores);
+
+	// Zero score of taken books.
+	for (int i = 0; i < l->scan_c; i++) {
+		scores[l->books[i]] = 0;
+	}
+}
+
+static void libs_sched_books(library_t *libs, int libs_c, int *scores) {
 	library_t *l;
-	int n;
-	for (int i = libs_c-1; i >= 0; i--) {
+	for (int i = 0; i < libs_c; i++) {
 		l = &libs[i];
-
-		// Sort books putting the most valuable ones first.
-		// This also helps removing duplicates: when a book
-		// is taken, its score is grounded.
-		qsort_r(l->books, l->books_c, sizeof(int), scores, books_cmp_score);
-
-		l->scan_c = lib_max_scan_c(*l, scores);
-
-		// Zero score of taken books.
-		for (int i = 0; i < l->scan_c; i++) {
-			scores[l->books[i]] = 0;
-		}
+		lib_sched_books(&libs[i], scores);
 	}
 }
 
@@ -188,14 +190,20 @@ int hc_solve(FILE *out, FILE *in) {
 		return rv;
 
 	libs_sort_cmp_b(libs, libs_c, scores);
-
 	int p = libs_avail(libs, libs_c, days);
-	libs_schedule_books(libs, p, scores_cpy);
+	libs_sched_books(libs, p, scores_cpy);
+
+	// TODO: some libraries are no longer valuable after this
+	// point, but still have a avail_d time that could be used
+	// by other libraries that come after `p`.
+	//
+	// TODO: print the number of days used (when the last library
+	// finished registration), so to understand how many days
+	// could be available.
 
 	fprintf(stderr, "--- detected %d(%d) valuable libraries out of %d\n", libs_count_valuable(libs, p), p, libs_c);
 	fprintf(stderr, "--- total score: %'d\n", libs_books_score(libs, p, scores));
 
-	// Format final output.
 	if ((rv = libs_fmt(out, libs, libs_c)))
 		return rv;
 
