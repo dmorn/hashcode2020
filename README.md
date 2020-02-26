@@ -15,7 +15,7 @@ Enter build/, make and test.
 % ctest # or `make test`. `ctest -V` for verbose output.
 ```
 
-## Current Status: 24,984,339
+## Current Status: 24,984,339 points
 ```
 % ./testall.sh
 computing solution for a_example.txt..
