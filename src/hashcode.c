@@ -10,22 +10,6 @@
 
 #define MIN(x,y) ((x) <= (y)) ? (x) : (y)
 
-// This is just a mocked implementetion that does
-// not really solve the problem. Used to check if
-// the testsuite behaves as expected.
-int hc_solve_practice(FILE *out, FILE *in) {
-	fprintf(out, "%d\n", 3);
-
-	char types[3] = {0, 2, 3};
-	int n = sizeof(types);
-	for (int i = 0; i < n-1; i++) {
-		fprintf(out, "%d ", types[i]);
-	}
-	fprintf(out, "%d\n", types[n-1]);
-	fflush(out);
-	return 0;
-}
-
 typedef struct library_s {
 	int id, books_c, signup_d, tput;
 	int *books;

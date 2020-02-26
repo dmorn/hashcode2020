@@ -13,40 +13,6 @@
 #include <cmocka.h>
 #include <hashcode.h>
 
-void test_practice_round(void **state) {
-	// Write input to a temporary file.
-	const char *input = "17 4\n2 5 6 8";
-	FILE *in = tmpfile();
-	if (in == NULL)
-		fail_msg("unable to open tmp file");
-	if (fputs(input, in) == EOF)
-		fail_msg("unable to write to tmp file");
-	rewind(in);
-
-	// Input is ready. Now create another tmp file
-	// that will store the expected output.
-	FILE *out = tmpfile();
-	if (out == NULL)
-		fail_msg("unable to open output tmp file");
-
-	// Call hashcode code.
-	if (hc_solve_practice(out, in))
-		fail_msg("unable to solve challenge");
-	rewind(out);
-
-	// Now out contains the solution.
-	const char *expout = "3\n0 2 3\n";
-
-	size_t n = strlen(expout)+1;
-	char *buf = malloc(n);
-	if (fread(buf, sizeof(char), n, out) < n-1) {
-		fail_msg("failed reading output file");
-	}
-	if(strcmp(buf, expout) != 0)
-		fail_msg("outputs are not the same!");
-	free(buf);
-}
-
 void test_a_example(void **state) {
 	// Write input to a temporary file.
 	const char *input = "6 2 7\n1 2 3 6 5 4\n5 2 2\n0 1 2 3 4\n4 3 1\n0 2 3 5\n";
@@ -84,7 +50,6 @@ void test_a_example(void **state) {
 
 int main(void) {
 	const struct CMUnitTest tests[] = {
-		cmocka_unit_test(test_practice_round),
 		cmocka_unit_test(test_a_example),
 	};
 	return cmocka_run_group_tests(tests, NULL, NULL);
