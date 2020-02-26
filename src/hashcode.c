@@ -34,14 +34,15 @@ typedef struct library_s {
 	int avail_d, scan_c;
 } library_t;
 
-static void libs_free(library_t **libs, int libs_c) {
+static void libs_free(library_t *libs, int libs_c) {
 	for (int i = 0; i < libs_c; i++) {
-		free(libs[i]->books);
-		free(libs[i]);
+		free(libs[i].books);
 	}
+	free(libs);
 }
 
-static int libs_parse(library_t **libs, int libs_c, FILE *in) {
+static int libs_parse(library_t *libs, int libs_c, FILE *in) {
+	library_t *lib;
 	for (int i = 0; i < libs_c; i++) {
 		int books_c, signup_d, tput;
 		if (fscanf(in, "%d %d %d", &books_c, &signup_d, &tput) < 0)
@@ -55,15 +56,13 @@ static int libs_parse(library_t **libs, int libs_c, FILE *in) {
 
 			books[j] = book;
 		}
-		library_t *lib = malloc(sizeof(library_t));
+		lib = &libs[i];
 		lib->id = i;
 		lib->books_c = books_c;
 		lib->signup_d = signup_d;
 		lib->tput = tput;
 		lib->books = books;
 		lib->scan_c = books_c;
-
-		libs[i] = lib;
 	}
 	return 0;
 }
@@ -110,9 +109,9 @@ static int libs_cmp_a(void *thunk, const void *l, const void *r) {
 	return rd_r - rd_l;
 }
 
-static void libs_sort_cmp_a(library_t **libs, int libs_c) {
+static void libs_sort_cmp_a(library_t *libs, int libs_c) {
 	cmp_a_stats_t *stats = malloc(sizeof(cmp_a_stats_t));
-	qsort_r(libs, libs_c, sizeof(library_t*), stats, libs_cmp_a);
+	qsort_r(libs, libs_c, sizeof(library_t), stats, libs_cmp_a);
 	fprintf(stderr, "--- library sorting stats: signup (%d), books # (%d), tput (%d)\n", stats->signup_d, stats->books_c, stats->tput);
 }
 
@@ -126,16 +125,16 @@ static int libs_cmp_b(void *thunk, const void *l, const void *r) {
 	return round((double)scorel/libl.signup_d - (double)scorer/libr.signup_d);
 }
 
-static void libs_sort_cmp_b(library_t **libs, int libs_c, int *scores) {
-	qsort_r(libs, libs_c, sizeof(library_t*), scores, libs_cmp_b);
+static void libs_sort_cmp_b(library_t *libs, int libs_c, int *scores) {
+	qsort_r(libs, libs_c, sizeof(library_t), scores, libs_cmp_b);
 }
 
 // libs_avail uses the signup duration exclusion principle, and
 // expected libs to be sorted be that value in ascending order.
-static int libs_avail(library_t **libs, int libs_c, int days) {
+static int libs_avail(library_t *libs, int libs_c, int days) {
 	int rv = 0;
 	for (int i = 0; i < libs_c; i++) {
-		int sd = libs[i]->signup_d;
+		int sd = libs[i].signup_d;
 
 		// This is the case where we overflow. We cannot
 		// accept any more library (later ones are expected
@@ -145,7 +144,7 @@ static int libs_avail(library_t **libs, int libs_c, int days) {
 
 		rv++;
 		days -= sd;
-		libs[i]->avail_d = days;
+		(&libs[i])->avail_d = days;
 	}
 	return rv;
 }
@@ -161,26 +160,26 @@ static int lib_scannable_books(library_t l, int* scores) {
 	return rv;
 }
 
-static int libs_books_score(library_t **libs, int libs_c, int *scores) {
+static int libs_books_score(library_t *libs, int libs_c, int *scores) {
 	int rv = 0;
 	for (int i = 0; i < libs_c; i++) {
-		rv += lib_books_score(*libs[i], scores);
+		rv += lib_books_score(libs[i], scores);
 	}
 	return rv;
 }
 
-static int libs_fmt(FILE *dst, library_t **libs, int libs_c) {
+static int libs_fmt(FILE *dst, library_t *libs, int libs_c) {
 	fprintf(dst, "%d\n", libs_c);
-	library_t *l;
+	library_t l;
 	int sb;
 	for (int i = 0; i < libs_c; i++) {
 		l = libs[i];
-		sb = l->scan_c;
-		fprintf(dst, "%d %d\n", l->id, sb);
+		sb = l.scan_c;
+		fprintf(dst, "%d %d\n", l.id, sb);
 		for (int j = 0; j < sb-1; j++) {
-			fprintf(dst, "%d ", l->books[j]);
+			fprintf(dst, "%d ", l.books[j]);
 		}
-		fprintf(dst, "%d\n", l->books[sb-1]);
+		fprintf(dst, "%d\n", l.books[sb-1]);
 	}
 	return 0;
 }
@@ -192,18 +191,18 @@ static int books_compare_a(void *thunk, const void *l, const void *r) {
 	return scores[br] - scores[bl];
 }
 
-static void books_display(library_t *l) {
-	fprintf(stderr, "library %d\n", l->id);
-	for (int i = 0; i < l->books_c; i++) {
-		fprintf(stderr, "book %d: %d\n", i, l->books[i]);
+static void books_display(library_t l) {
+	fprintf(stderr, "library %d\n", l.id);
+	for (int i = 0; i < l.books_c; i++) {
+		fprintf(stderr, "book %d: %d\n", i, l.books[i]);
 	}
 }
 
-static void libs_schedule_books(library_t **libs, int libs_c, int *scores) {
+static void libs_schedule_books(library_t *libs, int libs_c, int *scores) {
 	library_t *l;
 	int n;
 	for (int i = libs_c-1; i >= 0; i--) {
-		l = libs[i];
+		l = &libs[i];
 
 		// Sort books putting the most valuable ones first.
 		// This also helps removing duplicates: when a book
@@ -219,13 +218,11 @@ static void libs_schedule_books(library_t **libs, int libs_c, int *scores) {
 	}
 }
 
-static int libs_filter_valuable(library_t **libsf, library_t **libs, int libs_c) {
+static int libs_filter_valuable(library_t *libsf, library_t *libs, int libs_c) {
 	int rv = 0;
-	library_t *l;
 	for (int i = 0; i < libs_c; i++) {
-		l = libs[i];
-		if (l->scan_c > 0) {
-			libsf[rv] = l;
+		if (libs[i].scan_c > 0) {
+			libsf[rv] = libs[i];
 			rv++;
 		}
 	}
@@ -247,17 +244,17 @@ int hc_solve(FILE *out, FILE *in) {
 	memcpy(scores_cpy, scores, sizeof(int)*scores_c);
 
 	int rv;
-	library_t **libs = malloc(sizeof(library_t*)*libs_c);
+	library_t *libs = malloc(sizeof(library_t)*libs_c);
 	if ((rv = libs_parse(libs, libs_c, in)))
 		return rv;
 
-	// libs_sort_cmp_a(libs, libs_c);
-	libs_sort_cmp_b(libs, libs_c, scores);
+	libs_sort_cmp_a(libs, libs_c);
+	// libs_sort_cmp_b(libs, libs_c, scores);
 
 	int p = libs_avail(libs, libs_c, days);
 	libs_schedule_books(libs, p, scores_cpy);
 
-	library_t **libsf = malloc(sizeof(library_t)*libs_c);
+	library_t *libsf = malloc(sizeof(library_t)*libs_c);
 	int libsf_c = libs_filter_valuable(libsf, libs, p);
 
 	fprintf(stderr, "--- detected %d(%d) valuable libraries out of %d\n", libsf_c, p, libs_c);
