@@ -64,6 +64,12 @@ static int libs_cmp_b(void *thunk, const void *l, const void *r) {
 	library_t libr = *(library_t*)r;
 	int *scores = (int*)thunk;
 
+	// TODO: It could be interesting to also get compute
+	// the "uniquess" or "rarity" score of the book set.
+	// We could use that value as a probability that this
+	// library will have unique books and its score will
+	// not be lowered by other libraries.
+
 	int scorel = round((double)lib_books_score(libl, scores)/libl.signup_d);
 	int scorer = round((double)lib_books_score(libr, scores)/libr.signup_d);
 	return scorer - scorel;
