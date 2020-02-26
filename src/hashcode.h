@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 84cb48
+//
+// SPDX-License-Identifier: MIT
+
 #ifndef HASHCODE_H
 
 #define HASHCODE_H
