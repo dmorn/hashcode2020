@@ -36,7 +36,7 @@ void test_a_example(void **state) {
 	rewind(out);
 
 	// Now out contains the solution.
-	const char *expout = "2\n0 4\n4 2 1 0\n1 2\n3 5\n";
+	const char *expout = "2\n0 5\n3 4 2 1 0\n1 1\n5\n";
 
 	size_t n = strlen(expout);
 	char *buf = malloc(n);
