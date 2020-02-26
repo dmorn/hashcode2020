@@ -21,6 +21,7 @@ int hc_solve_practice(FILE *out, FILE *in) {
 		fprintf(out, "%d ", types[i]);
 	}
 	fprintf(out, "%d\n", types[n-1]);
+	fflush(out);
 	return 0;
 }
 
@@ -29,7 +30,7 @@ typedef struct library_s {
 	int *books;
 
 	// Dinamically computed fields.
-	int avail_d;
+	int avail_d, scan_c;
 } library_t;
 
 static void libs_free(library_t **libs, int libs_c) {
@@ -89,32 +90,40 @@ static int libs_compare_a(const void *l, const void *r) {
 	return rd_r - rd_l;
 }
 
+// libs_avail uses the signup duration exclusion principle, and
+// expected libs to be sorted be that value in ascending order.
 static int libs_avail(library_t **libs, int libs_c, int days) {
-	int rv = 0, avail = days-1;
+	int rv = 0;
 	for (int i = 0; i < libs_c; i++) {
 		int sd = libs[i]->signup_d;
 
 		// This is the case where we overflow. We cannot
 		// accept any more library (later ones are expected
 		// to take even more signup time).
-		if (avail - sd < 0)
+		if (days - sd < 0)
 			return rv;
 
 		rv++;
-		avail -= sd;
-		libs[i]->avail_d = avail;
+		days -= sd;
+		libs[i]->avail_d = days;
 	}
 	return rv;
 }
 
-static int lib_scannable_books(library_t l) {
-	int max = l.tput * l.avail_d;
-	return _MIN(max, l.books_c);
+static int lib_scannable_books(library_t l, int* scores) {
+	int p, e, rv;
+	p = l.tput * l.avail_d; // possible
+	e = _MIN(p, l.books_c); // effective
+	for (int i = 0; i < e; i++) {
+		if (scores[l.books[i]] > 0)
+			rv++;
+	}
+	return rv;
 }
 
 static int lib_books_score(library_t l, int* scores) {
 	int rv = 0;
-	for (int i = 0; i < lib_scannable_books(l); i++) {
+	for (int i = 0; i < l.scan_c; i++) {
 		rv += scores[l.books[i]];
 	}
 	return rv;
@@ -126,7 +135,7 @@ static int libs_fmt(FILE *dst, library_t **libs, int libs_c) {
 	int sb;
 	for (int i = 0; i < libs_c; i++) {
 		l = libs[i];
-		sb = lib_scannable_books(*l);
+		sb = l->scan_c;
 		fprintf(dst, "%d %d\n", l->id, sb);
 		for (int j = 0; j < sb-1; j++) {
 			fprintf(dst, "%d ", l->books[j]);
@@ -143,8 +152,16 @@ static int books_compare_a(void *thunk, const void *l, const void *r) {
 	return scores[br] - scores[bl];
 }
 
+static void books_display(library_t *l) {
+	fprintf(stderr, "library %d\n", l->id);
+	for (int i = 0; i < l->books_c; i++) {
+		fprintf(stderr, "book %d: %d\n", i, l->books[i]);
+	}
+}
+
 static void libs_schedule_books(library_t **libs, int libs_c, int *scores) {
 	library_t *l;
+	int n;
 	for (int i = libs_c-1; i >= 0; i--) {
 		l = libs[i];
 
@@ -154,22 +171,22 @@ static void libs_schedule_books(library_t **libs, int libs_c, int *scores) {
 		qsort_r(l->books, l->books_c, sizeof(int), scores, books_compare_a);
 
 		// Zero score of taken books.
-		for (int i = 0; i < lib_scannable_books(*l); i++) {
+		l->scan_c=lib_scannable_books(*l, scores);
+		for (int i = 0; i < l->scan_c; i++) {
 			scores[l->books[i]] = 0;
 		}
 	}
 }
 
-static int libs_filter_valuable(library_t **libsf, library_t **libs, int libs_c, int *scores) {
+static int libs_filter_valuable(library_t **libsf, library_t **libs, int libs_c) {
 	int rv = 0;
 	library_t *l;
 	for (int i = 0; i < libs_c; i++) {
 		l = libs[i];
-		if (lib_books_score(*l, scores) == 0)
-			continue;
-
-		libsf[rv] = l;
-		rv++;
+		if (l->scan_c > 0) {
+			libsf[rv] = l;
+			rv++;
+		}
 	}
 	return rv;
 }
@@ -198,7 +215,7 @@ int hc_solve(FILE *out, FILE *in) {
 	libs_schedule_books(libs, p, scores_cpy);
 
 	library_t **libsf = malloc(sizeof(library_t*)*libs_c);
-	int libsf_c = libs_filter_valuable(libsf, libs, p, scores);
+	int libsf_c = libs_filter_valuable(libsf, libs, p);
 
 
 	// Format final output.
